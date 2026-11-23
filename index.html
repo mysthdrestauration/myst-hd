@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Myst HD Restoration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=Oswald:wght@500;700&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* One visual world: the night sky over Myst Island. Ink background, pale sky text, brass of the linking-book hardware. */
+  /* Layout: a reading column for the story, media breaking out to the full width of the page. */
+  --ink: #0a0f14;
+  --panel: #121a21;
+  --text: #e6f1f0;
+  --muted: #93a6ab;
+  --brass: #c8a35a;
+  --sky: #bfeff0;
+  --display: "Oswald", "Arial Narrow", sans-serif;
+  --body: "Spectral", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --col: 40rem;
+  --wide: 72rem;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { background: var(--ink); }
+body {
+  margin: 0; background: var(--ink); color: var(--text);
+  font-family: var(--body); font-size: 1.125rem; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+img, video { max-width: 100%; display: block; }
+[hidden] { display: none !important; }
+a { color: var(--sky); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, input:focus-visible, video:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
+code { font-family: var(--mono); font-size: 0.85em; color: var(--sky); }
+kbd {
+  font-family: var(--mono); font-size: 0.8em; padding: 0.05em 0.4em; border: 1px solid #3a4a52;
+  border-bottom-width: 2px; border-radius: 4px; color: var(--text); background: var(--panel);
+}
+.wrap { width: min(var(--wide), 100% - 2.5rem); margin-inline: auto; }
+
+/* hero */
+.hero { padding: 4.5rem 0 2.5rem; }
+.eyebrow { font-family: var(--mono); font-size: 0.85rem; color: var(--brass); letter-spacing: 0.04em; margin: 0 0 1.25rem; }
+h1 {
+  font-family: var(--display); font-weight: 700; text-transform: uppercase; letter-spacing: 0.01em;
+  font-size: clamp(2.8rem, 8vw, 6.2rem); line-height: 0.95; margin: 0 0 1.5rem; text-wrap: balance;
+}
+h1 .light { color: var(--sky); }
+.lede { max-width: var(--col); font-size: 1.3rem; color: var(--text); margin: 0 0 2.5rem; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: 1px; background: #24313a; border: 1px solid #24313a; margin: 0 0 2.5rem; }
+.stats div { background: var(--ink); padding: 1rem 1.1rem 1.1rem; }
+.stats dt { font-family: var(--display); font-weight: 500; font-size: 2rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stats dd { margin: 0.25rem 0 0; font-size: 0.95rem; color: var(--muted); line-height: 1.35; }
+.film { width: 100%; height: auto; aspect-ratio: 16 / 9; border: 1px solid #24313a; background: #000; }
+.film-cap { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); margin: 0.6rem 0 0; }
+
+/* sections */
+.sec { padding: 4.5rem 0 1rem; border-top: 1px solid #1d2830; }
+.sec-head { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 1.25rem; }
+.num { font-family: var(--mono); color: var(--brass); font-size: 1rem; }
+h2 {
+  font-family: var(--display); font-weight: 700; text-transform: uppercase; letter-spacing: 0.01em;
+  font-size: clamp(1.9rem, 4.5vw, 3rem); line-height: 1; margin: 0; text-wrap: balance;
+}
+.sec-text { max-width: var(--col); }
+.sec-text p { margin: 0 0 1rem; }
+.how { font-family: var(--mono); font-size: 0.82rem; line-height: 1.55; color: var(--muted); border-left: 2px solid var(--brass); padding-left: 0.9rem; }
+.media { margin-top: 1.75rem; max-width: 52rem; }
+.media.wide { max-width: none; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); gap: 1.75rem 1.5rem; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 1.75rem 1.5rem; align-items: start; }
+.tag { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); margin: 0.55rem 0 0; }
+
+/* before / after */
+.ba { position: relative; margin: 0; overflow: hidden; background: var(--panel); touch-action: pan-y; user-select: none; }
+.ba-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ba-after { clip-path: inset(0 0 0 var(--pos)); }
+.ba-line { position: absolute; top: 0; bottom: 0; left: var(--pos); width: 2px; margin-left: -1px; background: var(--brass); pointer-events: none; }
+.ba-line::after {
+  content: ""; position: absolute; top: 50%; left: 50%; width: 2.1rem; height: 2.1rem; margin: -1.05rem 0 0 -1.05rem;
+  border-radius: 50%; background: var(--ink); border: 2px solid var(--brass);
+  background-image: linear-gradient(90deg, transparent 44%, var(--brass) 44% 56%, transparent 56%);
+}
+.ba-label {
+  position: absolute; top: 0.6rem; font-family: var(--display); font-weight: 500; text-transform: uppercase;
+  font-size: 0.8rem; letter-spacing: 0.04em; padding: 0.15rem 0.5rem; background: rgba(10, 15, 20, 0.82); pointer-events: none;
+}
+.ba-l { left: 0.6rem; color: var(--text); }
+.ba-r { right: 0.6rem; color: var(--sky); }
+.ba-range { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; -webkit-appearance: none; appearance: none; }
+.ba:has(.ba-range:focus-visible) { outline: 2px solid var(--brass); outline-offset: 3px; }
+
+/* video */
+.vid-labels { display: grid; grid-template-columns: 1fr 1fr; font-family: var(--display); font-weight: 500; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.04em; margin-bottom: 0.45rem; }
+.vid-labels span:first-child { padding-left: 2.1%; }
+.vid-labels .sky { color: var(--sky); padding-left: 2.5%; }
+.vid video { width: 100%; height: auto; aspect-ratio: 1920 / 604; background: var(--ink); }
+
+/* modes */
+.mode-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.9rem; }
+.mode-buttons button {
+  font: inherit; font-size: 0.95rem; color: var(--muted); background: var(--panel); border: 1px solid #2a3942;
+  padding: 0.45rem 0.8rem; cursor: pointer; display: flex; gap: 0.5rem; align-items: center;
+}
+.mode-buttons button[aria-pressed="true"] { color: var(--text); border-color: var(--brass); }
+.mode-buttons button:hover { color: var(--text); }
+.mode-view { position: relative; background: var(--panel); }
+.mode-view img { width: 100%; height: 100%; object-fit: cover; }
+.mode-osd {
+  position: absolute; top: 0.8rem; right: 1rem; font-family: var(--display); font-weight: 700; font-size: 1.05rem;
+  letter-spacing: 0.04em; color: #cfdddf; text-shadow: 0 2px 3px rgba(0, 0, 0, 0.75); transition: opacity 0.4s;
+}
+.mode-osd.off { opacity: 0; }
+
+.rules { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.8rem; }
+.rules li { padding-left: 1.6rem; position: relative; }
+.rules li::before { content: ""; position: absolute; left: 0; top: 0.8em; width: 0.9rem; height: 2px; background: var(--brass); }
+.rules.small { font-size: 1rem; }
+
+
+.hero { position: relative; }
+.lang { position: absolute; top: 1.2rem; right: 0; }
+.lang select {
+  font-family: var(--mono); font-size: 0.8rem; color: var(--muted); background: transparent; border: 1px solid #24313a;
+  border-radius: 3px; padding: 0.25rem 1.6rem 0.25rem 0.55rem; cursor: pointer; -webkit-appearance: none; appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: right 0.7rem center, right 0.45rem center; background-size: 0.25rem 0.25rem; background-repeat: no-repeat;
+}
+.lang select:hover, .lang select:focus-visible { color: var(--text); border-color: var(--brass); }
+.lang option { background: var(--panel); color: var(--text); }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.release { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.pill { font-family: var(--mono); font-size: 0.85rem; padding: 0.35rem 0.75rem; border: 1px solid #2a3942; color: var(--text); background: var(--panel); }
+.pill-wip { border-color: var(--brass); color: var(--brass); }
+.title-ba { margin-bottom: 1.75rem; }
+footer { margin-top: 4.5rem; padding: 2rem 0 3rem; border-top: 1px solid #1d2830; color: var(--muted); font-size: 0.95rem; }
+footer h2 { font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text); }
+footer ul { margin: 0 0 1.5rem; padding-left: 1.1rem; max-width: 46rem; }
+footer p { max-width: 46rem; }
+
+@media (max-width: 30rem) {
+  body { font-size: 1.05rem; }
+  .lede { font-size: 1.15rem; }
+  .vid-labels { font-size: 0.72rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mode-osd { transition: none; }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <section class="hero">
+    <div class="lang"><label for="lang-select" class="vh" data-i18n="langlabel">Language</label>
+      <select id="lang-select">
+        <option value="en">English</option><option value="fr">Français</option><option value="de">Deutsch</option>
+        <option value="pl">Polski</option><option value="es">Español</option>
+      </select></div>
+    <p class="eyebrow" data-i18n="eyebrow">Myst: Masterpiece Edition · 25th Anniversary · fan restoration</p>
+    <h1 data-i18n="h1">Myst, in <span class="light">high definition</span></h1>
+    <p class="lede" data-i18n="lede">Every picture and every movie of the game in four times the resolution, smoother movies, and a few fixes to the official version. The original 1993 images stay one key away.</p>
+    <dl class="stats">
+      <div><dt data-i18n="n1">3,415</dt><dd data-i18n="d1">pictures, 544×333 → 2176×1332</dd></div>
+      <div><dt>234</dt><dd data-i18n="d2">movies in HD, same timing and sound</dd></div>
+      <div><dt>222</dt><dd data-i18n="d3">movies at a steady 60 images per second</dd></div>
+      <div><dt>3</dt><dd data-i18n="d4">display modes, switched at any time</dd></div>
+    </dl>
+    <video class="film" src="video/montage_web.mp4" controls playsinline preload="metadata" poster="img/poster.jpg" width="1920" height="1080" aria-label="Video tour of the restoration, 1 minute 53 seconds, with music, captions in English" data-i18n-aria="film"></video>
+    <p class="film-cap" data-i18n="filmcap">Video tour · 1 min 53 s · 1080p at 60 frames per second · captions in English</p>
+  </section>
+
+<section class="sec" id="s01">
+  <header class="sec-head"><span class="num">01</span><h2 data-i18n="t1">Four times the resolution</h2></header>
+  <div class="sec-text"><p data-i18n="p1">Every picture of the game is now four times sharper: 2176×1332 pixels instead of 544×333. On the left, the original; on the right, Myst HD. Drag the line to compare.</p></div>
+  <div class="media wide"><div class="title-ba"><figure class="ba" style="--pos:50%;aspect-ratio:2180/1332">
+  <img class="ba-img" src="img/titre_0_original.jpg" width="2180" height="1332" alt="The title screen (Original)" data-i18n-alt="a.ttl.o" loading="lazy">
+  <img class="ba-img ba-after" src="img/titre_2_hd.jpg" width="2180" height="1332" alt="The title screen (HD)" data-i18n-alt="a.ttl.h" loading="lazy">
+  <span class="ba-line" aria-hidden="true"></span>
+  <span class="ba-label ba-l" data-i18n="orig">Original</span><span class="ba-label ba-r" data-i18n="hd">HD</span>
+  <input class="ba-range" type="range" min="0" max="100" value="50" step="0.5" aria-label="Compare original and HD: The title screen" data-i18n-aria="a.ttl.c">
+</figure>
+<p class="tag" data-i18n="ttl">Title screen</p></div><div class="grid2"><div><figure class="ba" style="--pos:50%;aspect-ratio:960/600">
+  <img class="ba-img" src="img/up_island_0_original.jpg" width="960" height="600" alt="The gear on its hill, seen from the dock (Original)" data-i18n-alt="a.gear.o" loading="lazy">
+  <img class="ba-img ba-after" src="img/up_island_2_hd.jpg" width="960" height="600" alt="The gear on its hill, seen from the dock (HD)" data-i18n-alt="a.gear.h" loading="lazy">
+  <span class="ba-line" aria-hidden="true"></span>
+  <span class="ba-label ba-l" data-i18n="orig">Original</span><span class="ba-label ba-r" data-i18n="hd">HD</span>
+  <input class="ba-range" type="range" min="0" max="100" value="50" step="0.5" aria-label="Compare original and HD: The gear on its hill, seen from the dock" data-i18n-aria="a.gear.c">
+</figure>
+<p class="tag" data-i18n="island">Myst Island</p></div><div><figure class="ba" style="--pos:50%;aspect-ratio:960/600">
+  <img class="ba-img" src="img/up_sirrus_0_original.jpg" width="960" height="600" alt="Sirrus’ room and the windmill behind the window (Original)" data-i18n-alt="a.sirrus.o" loading="lazy">
+  <img class="ba-img ba-after" src="img/up_sirrus_2_hd.jpg" width="960" height="600" alt="Sirrus’ room and the windmill behind the window (HD)" data-i18n-alt="a.sirrus.h" loading="lazy">
+  <span class="ba-line" aria-hidden="true"></span>
+  <span class="ba-label ba-l" data-i18n="orig">Original</span><span class="ba-label ba-r" data-i18n="hd">HD</span>
+  <input class="ba-range" type="range" min="0" max="100" value="50" step="0.5" aria-label="Compare original and HD: Sirrus’ room and the windmill behind the window" data-i18n-aria="a.sirrus.c">
+</figure>
+<p class="tag" data-i18n="channel">Channelwood</p></div><div><figure class="ba" style="--pos:50%;aspect-ratio:960/600">
+  <img class="ba-img" src="img/up_stone_0_original.jpg" width="960" height="600" alt="Inside the lighthouse (Original)" data-i18n-alt="a.light.o" loading="lazy">
+  <img class="ba-img ba-after" src="img/up_stone_2_hd.jpg" width="960" height="600" alt="Inside the lighthouse (HD)" data-i18n-alt="a.light.h" loading="lazy">
+  <span class="ba-line" aria-hidden="true"></span>
+  <span class="ba-label ba-l" data-i18n="orig">Original</span><span class="ba-label ba-r" data-i18n="hd">HD</span>
+  <input class="ba-range" type="range" min="0" max="100" value="50" step="0.5" aria-label="Compare original and HD: Inside the lighthouse" data-i18n-aria="a.light.c">
+</figure>
+<p class="tag" data-i18n="stone">Stoneship</p></div><div><figure class="ba" style="--pos:50%;aspect-ratio:960/600">
+  <img class="ba-img" src="img/up_ship_0_original.jpg" width="960" height="600" alt="The ship at the dock (Original)" data-i18n-alt="a.ship.o" loading="lazy">
+  <img class="ba-img ba-after" src="img/up_ship_2_hd.jpg" width="960" height="600" alt="The ship at the dock (HD)" data-i18n-alt="a.ship.h" loading="lazy">
+  <span class="ba-line" aria-hidden="true"></span>
+  <span class="ba-label ba-l" data-i18n="orig">Original</span><span class="ba-label ba-r" data-i18n="hd">HD</span>
+  <input class="ba-range" type="range" min="0" max="100" value="50" step="0.5" aria-label="Compare original and HD: The ship at the dock" data-i18n-aria="a.ship.c">
+</figure>
+<p class="tag" data-i18n="island">Myst Island</p></div></div></div>
+</section>
+<section class="sec" id="s02">
+  <header class="sec-head"><span class="num">02</span><h2 data-i18n="t2">The movies too</h2></header>
+  <div class="sec-text"><p data-i18n="p2">All the movies of the game are in HD as well, with the same timing and the same sound.</p></div>
+  <div class="media wide"><div class="vid"><div class="vid-labels"><span data-i18n="orig">Original</span><span class="sky" data-i18n="hd">HD</span></div><video src="video/clip_movies.mp4" autoplay muted loop playsinline preload="auto" width="1920" height="604" aria-label="Mechanical Age fly-by: original next to HD" data-i18n-aria="v2"></video></div><p class="tag" data-i18n="mech">Mechanical Age</p></div>
+</section>
+<section class="sec" id="s03">
+  <header class="sec-head"><span class="num">03</span><h2 data-i18n="t3">Clean edges</h2></header>
+  <div class="sec-text"><p data-i18n="p3">Wires, ropes and railings no longer show stair steps: they are smooth and continuous.</p></div>
+  <div class="media wide"><div class="grid3"><div><figure class="ba" style="--pos:50%;aspect-ratio:960/600">
+  <img class="ba-img" src="img/aa_0_original.jpg" width="960" height="600" alt="The rigging of the ship (Original)" data-i18n-alt="a.rig.o" loading="lazy">
+  <img class="ba-img ba-after" src="img/aa_2_apres.jpg" width="960" height="600" alt="The rigging of the ship (HD)" data-i18n-alt="a.rig.h" loading="lazy">
+  <span class="ba-line" aria-hidden="true"></span>
+  <span class="ba-label ba-l" data-i18n="orig">Original</span><span class="ba-label ba-r" data-i18n="hd">HD</span>
+  <input class="ba-range" type="range" min="0" max="100" value="50" step="0.5" aria-label="Compare original and HD: The rigging of the ship" data-i18n-aria="a.rig.c">
+</figure>
+<p class="tag" data-i18n="island">Myst Island</p></div><div><figure class="ba" style="--pos:50%;aspect-ratio:960/600">
+  <img class="ba-img" src="img/courbes_0_original.jpg" width="960" height="600" alt="A wire across the forest (Original)" data-i18n-alt="a.wire.o" loading="lazy">
+  <img class="ba-img ba-after" src="img/courbes_2_apres.jpg" width="960" height="600" alt="A wire across the forest (HD)" data-i18n-alt="a.wire.h" loading="lazy">
+  <span class="ba-line" aria-hidden="true"></span>
+  <span class="ba-label ba-l" data-i18n="orig">Original</span><span class="ba-label ba-r" data-i18n="hd">HD</span>
+  <input class="ba-range" type="range" min="0" max="100" value="50" step="0.5" aria-label="Compare original and HD: A wire across the forest" data-i18n-aria="a.wire.c">
+</figure>
+<p class="tag" data-i18n="island">Myst Island</p></div><div><figure class="ba" style="--pos:50%;aspect-ratio:960/600">
+  <img class="ba-img" src="img/cable_0_original.jpg" width="960" height="600" alt="The cable to the rocket (Original)" data-i18n-alt="a.cable.o" loading="lazy">
+  <img class="ba-img ba-after" src="img/cable_2_apres.jpg" width="960" height="600" alt="The cable to the rocket (HD)" data-i18n-alt="a.cable.h" loading="lazy">
+  <span class="ba-line" aria-hidden="true"></span>
+  <span class="ba-label ba-l" data-i18n="orig">Original</span><span class="ba-label ba-r" data-i18n="hd">HD</span>
+  <input class="ba-range" type="range" min="0" max="100" value="50" step="0.5" aria-label="Compare original and HD: The cable to the rocket" data-i18n-aria="a.cable.c">
+</figure>
+<p class="tag" data-i18n="island">Myst Island</p></div></div></div>
+</section>
+<section class="sec" id="s04">
+  <header class="sec-head"><span class="num">04</span><h2 data-i18n="t4">The dock planks</h2></header>
+  <div class="sec-text"><p data-i18n="p4">The planks of the dock stay crisp all the way into the distance.</p></div>
+  <div class="media"><figure class="ba" style="--pos:50%;aspect-ratio:960/600">
+  <img class="ba-img" src="img/planches_0_original.jpg" width="960" height="600" alt="The dock seen from the ship (Original)" data-i18n-alt="a.dock.o" loading="lazy">
+  <img class="ba-img ba-after" src="img/planches_2_apres.jpg" width="960" height="600" alt="The dock seen from the ship (HD)" data-i18n-alt="a.dock.h" loading="lazy">
+  <span class="ba-line" aria-hidden="true"></span>
+  <span class="ba-label ba-l" data-i18n="orig">Original</span><span class="ba-label ba-r" data-i18n="hd">HD</span>
+  <input class="ba-range" type="range" min="0" max="100" value="50" step="0.5" aria-label="Compare original and HD: The dock seen from the ship" data-i18n-aria="a.dock.c">
+</figure>
+<p class="tag" data-i18n="island">Myst Island</p></div>
+</section>
+<section class="sec" id="s05">
+  <header class="sec-head"><span class="num">05</span><h2 data-i18n="t5">No more boxes</h2></header>
+  <div class="sec-text"><p data-i18n="p5">In the official version, a raised switch or an open door shows a box around it. In Myst HD it blends into the view.</p></div>
+  <div class="media"><figure class="ba" style="--pos:50%;aspect-ratio:708/548">
+  <img class="ba-img" src="img/rect_4551_0_officiel.jpg" width="708" height="548" alt="A raised switch (Original)" data-i18n-alt="a.raised.o" loading="lazy">
+  <img class="ba-img ba-after" src="img/rect_4551_3_hd.jpg" width="708" height="548" alt="A raised switch (HD)" data-i18n-alt="a.raised.h" loading="lazy">
+  <span class="ba-line" aria-hidden="true"></span>
+  <span class="ba-label ba-l" data-i18n="orig">Original</span><span class="ba-label ba-r" data-i18n="hd">HD</span>
+  <input class="ba-range" type="range" min="0" max="100" value="50" step="0.5" aria-label="Compare original and HD: A raised switch" data-i18n-aria="a.raised.c">
+</figure>
+<p class="tag" data-i18n="tag5">Myst Island · switch in front of the rocket</p></div>
+</section>
+<section class="sec" id="s06">
+  <header class="sec-head"><span class="num">06</span><h2 data-i18n="t6">Everything in its place</h2></header>
+  <div class="sec-text"><p data-i18n="p6">In the official version, switches and other moving parts are drawn one pixel too low and break the lines behind them. In Myst HD they sit exactly where they belong.</p></div>
+  <div class="media wide"><div class="grid2"><div><figure class="ba" style="--pos:50%;aspect-ratio:720/520">
+  <img class="ba-img" src="img/align_baisse_0_officiel.jpg" width="720" height="520" alt="A switch near the rocket (Original)" data-i18n-alt="a.sw.o" loading="lazy">
+  <img class="ba-img ba-after" src="img/align_baisse_3_hd.jpg" width="720" height="520" alt="A switch near the rocket (HD)" data-i18n-alt="a.sw.h" loading="lazy">
+  <span class="ba-line" aria-hidden="true"></span>
+  <span class="ba-label ba-l" data-i18n="orig">Original</span><span class="ba-label ba-r" data-i18n="hd">HD</span>
+  <input class="ba-range" type="range" min="0" max="100" value="50" step="0.5" aria-label="Compare original and HD: A switch near the rocket" data-i18n-aria="a.sw.c">
+</figure>
+<p class="tag" data-i18n="tag6d">Myst Island · switch down</p></div><div><figure class="ba" style="--pos:50%;aspect-ratio:720/520">
+  <img class="ba-img" src="img/align_leve_0_officiel.jpg" width="720" height="520" alt="A switch near the rocket (Original)" data-i18n-alt="a.sw.o" loading="lazy">
+  <img class="ba-img ba-after" src="img/align_leve_3_hd.jpg" width="720" height="520" alt="A switch near the rocket (HD)" data-i18n-alt="a.sw.h" loading="lazy">
+  <span class="ba-line" aria-hidden="true"></span>
+  <span class="ba-label ba-l" data-i18n="orig">Original</span><span class="ba-label ba-r" data-i18n="hd">HD</span>
+  <input class="ba-range" type="range" min="0" max="100" value="50" step="0.5" aria-label="Compare original and HD: A switch near the rocket" data-i18n-aria="a.sw.c">
+</figure>
+<p class="tag" data-i18n="tag6u">Myst Island · switch up</p></div></div></div>
+</section>
+<section class="sec" id="s07">
+  <header class="sec-head"><span class="num">07</span><h2 data-i18n="t7">Movies that blend in</h2></header>
+  <div class="sec-text"><p data-i18n="p7">In the official version, some movies show their rectangle inside the view, like the patch of sky that follows the gulls. In Myst HD they blend into the scene.</p></div>
+  <div class="media wide"><div class="grid2"><div><figure class="ba" style="--pos:50%;aspect-ratio:880/432">
+  <img class="ba-img" src="img/mouettes_0_officiel.jpg" width="880" height="432" alt="A gull over the dock (Original)" data-i18n-alt="a.gull.o" loading="lazy">
+  <img class="ba-img ba-after" src="img/mouettes_3_hd.jpg" width="880" height="432" alt="A gull over the dock (HD)" data-i18n-alt="a.gull.h" loading="lazy">
+  <span class="ba-line" aria-hidden="true"></span>
+  <span class="ba-label ba-l" data-i18n="orig">Original</span><span class="ba-label ba-r" data-i18n="hd">HD</span>
+  <input class="ba-range" type="range" min="0" max="100" value="50" step="0.5" aria-label="Compare original and HD: A gull over the dock" data-i18n-aria="a.gull.c">
+</figure>
+<p class="tag" data-i18n="island">Myst Island</p></div><div><figure class="ba" style="--pos:50%;aspect-ratio:528/608">
+  <img class="ba-img" src="img/inc_moulin_0_officiel.jpg" width="528" height="608" alt="The windmill through the window (Original)" data-i18n-alt="a.mill.o" loading="lazy">
+  <img class="ba-img ba-after" src="img/inc_moulin_3_hd.jpg" width="528" height="608" alt="The windmill through the window (HD)" data-i18n-alt="a.mill.h" loading="lazy">
+  <span class="ba-line" aria-hidden="true"></span>
+  <span class="ba-label ba-l" data-i18n="orig">Original</span><span class="ba-label ba-r" data-i18n="hd">HD</span>
+  <input class="ba-range" type="range" min="0" max="100" value="50" step="0.5" aria-label="Compare original and HD: The windmill through the window" data-i18n-aria="a.mill.c">
+</figure>
+<p class="tag" data-i18n="channel">Channelwood</p></div></div></div>
+</section>
+<section class="sec" id="s08">
+  <header class="sec-head"><span class="num">08</span><h2 data-i18n="t8">Sixty frames per second</h2></header>
+  <div class="sec-text"><p data-i18n="p8">Movies that showed 10 to 15 images per second now play smoothly at 60.</p></div>
+  <div class="media wide"><div class="vid"><div class="vid-labels"><span data-i18n="l8o">Original · 15 images per second</span><span class="sky" data-i18n="l8h">HD · 60 images per second</span></div><video src="video/clip_60fps.mp4" autoplay muted loop playsinline preload="auto" width="1920" height="604" aria-label="Myst Island fly-by: original at 15 images per second next to HD at 60" data-i18n-aria="v8"></video></div></div>
+</section>
+<section class="sec" id="s09">
+  <header class="sec-head"><span class="num">09</span><h2 data-i18n="t9">Three ways to see Myst</h2></header>
+  <div class="sec-text"><p data-i18n="p9">Press <kbd>H</kbd>, <kbd>O</kbd> or <kbd>S</kbd> at any time, even in the middle of a movie, which carries on from the same instant. <b>H</b> is the HD version. <b>O</b> is the original picture enlarged pixel for pixel. <b>S</b> is the original picture smoothed. The name of the mode appears for two seconds in the top right corner, in the language of the game: English, French, German, Polish or Spanish.</p></div>
+  <div class="media"><div class="modes" role="group" aria-label="Display mode" data-i18n-aria="modes">
+  <div class="mode-buttons">
+    <button type="button" data-mode="H" aria-pressed="true"><kbd>H</kbd> <span data-i18n="mH">HD version</span></button>
+    <button type="button" data-mode="O" aria-pressed="false"><kbd>O</kbd> <span data-i18n="mO">Original version, sharp pixels</span></button>
+    <button type="button" data-mode="S" aria-pressed="false"><kbd>S</kbd> <span data-i18n="mS">Original version, smoothed</span></button>
+  </div>
+  <div class="mode-view" style="aspect-ratio:960/600">
+    <img src="img/up_island_2_hd.jpg" data-mode="H" alt="Myst Island, HD version" data-i18n-alt="altH" width="960" height="600">
+    <img src="img/up_island_0_original.jpg" data-mode="O" alt="Myst Island, Original version, sharp pixels" data-i18n-alt="altO" width="960" height="600" hidden>
+    <img src="img/up_island_1_smooth.jpg" data-mode="S" alt="Myst Island, Original version, smoothed" data-i18n-alt="altS" width="960" height="600" hidden>
+    <span class="mode-osd" aria-live="polite">HD version</span>
+  </div>
+</div>
+<p class="tag" data-i18n="tag9">Myst Island · try the H, O and S keys on this page</p></div>
+</section>
+<section class="sec" id="s10">
+  <header class="sec-head"><span class="num">10</span><h2 data-i18n="t10">Faithful to 1993</h2></header>
+  <div class="sec-text"><ul class="rules"><li data-i18n="r1">The low-resolution textures of the 1993 renders are not repainted.</li><li data-i18n="r2">The red and blue pages are left exactly as they are.</li><li data-i18n="r3">Every change was checked against the original. Anything softer than the original was refused.</li><li data-i18n="r4">Timing, sound and puzzles are unchanged, and the original application is not modified.</li><li data-i18n="r5">The original pictures are always one key away.</li></ul></div>
+  <div class="media"></div>
+</section>
+<section class="sec" id="s11">
+  <header class="sec-head"><span class="num">11</span><h2 data-i18n="t11">Release</h2></header>
+  <div class="sec-text"><p data-i18n="p11">Myst HD is still a work in progress: nothing has been released yet. It should run on Mac and Windows.</p></div>
+  <div class="media"><div class="release"><span class="pill pill-wip" data-i18n="wip">Work in progress</span><span class="pill" data-i18n="plat">Planned: Mac · Windows</span></div></div>
+</section>
+
+  <footer>
+    <h2 data-i18n="credits">Credits</h2>
+    <ul><li data-i18n="c1"><a href="https://www.scummvm.org/">ScummVM</a>, GNU GPL. The engine patch is available in source form.</li><li data-i18n="c2">Upscaling model 4xNomos8kSC by Philip Hofmann, <a href="https://huggingface.co/Phips/4xNomos8kSC">CC BY 4.0</a>.</li><li data-i18n="c3">Frame interpolation: RIFE v4.6 through rife-ncnn-vulkan by nihui, MIT licence.</li><li data-i18n="c4">Oswald and Noto Sans typefaces, SIL Open Font License.</li></ul>
+    <p data-i18n="legal">This is an unofficial fan project, not affiliated with or endorsed by Cyan Worlds, Inc. Myst is a registered trademark of Cyan Worlds, Inc. All pictures, movies and music of the game © Cyan Worlds, Inc. No game files are distributed with this page.</p>
+  </footer>
+</main>
+
+<script>
+(function () {
+  var I18N = {"en": {"orig": "Original", "hd": "HD", "cmp": "Compare original and HD: ", "island": "Myst Island", "channel": "Channelwood", "stone": "Stoneship", "mech": "Mechanical Age", "t1": "Four times the resolution", "p1": "Every picture of the game is now four times sharper: 2176×1332 pixels instead of 544×333. On the left, the original; on the right, Myst HD. Drag the line to compare.", "a.gear": "The gear on its hill, seen from the dock", "a.sirrus": "Sirrus’ room and the windmill behind the window", "a.light": "Inside the lighthouse", "a.ship": "The ship at the dock", "ttl": "Title screen", "a.ttl": "The title screen", "a.ttl.o": "The title screen (Original)", "a.ttl.h": "The title screen (HD)", "a.ttl.c": "Compare original and HD: The title screen", "a.gear.o": "The gear on its hill, seen from the dock (Original)", "a.gear.h": "The gear on its hill, seen from the dock (HD)", "a.gear.c": "Compare original and HD: The gear on its hill, seen from the dock", "a.sirrus.o": "Sirrus’ room and the windmill behind the window (Original)", "a.sirrus.h": "Sirrus’ room and the windmill behind the window (HD)", "a.sirrus.c": "Compare original and HD: Sirrus’ room and the windmill behind the window", "a.light.o": "Inside the lighthouse (Original)", "a.light.h": "Inside the lighthouse (HD)", "a.light.c": "Compare original and HD: Inside the lighthouse", "a.ship.o": "The ship at the dock (Original)", "a.ship.h": "The ship at the dock (HD)", "a.ship.c": "Compare original and HD: The ship at the dock", "t2": "The movies too", "p2": "All the movies of the game are in HD as well, with the same timing and the same sound.", "v2": "Mechanical Age fly-by: original next to HD", "t3": "Clean edges", "p3": "Wires, ropes and railings no longer show stair steps: they are smooth and continuous.", "a.rig": "The rigging of the ship", "a.wire": "A wire across the forest", "a.cable": "The cable to the rocket", "a.rig.o": "The rigging of the ship (Original)", "a.rig.h": "The rigging of the ship (HD)", "a.rig.c": "Compare original and HD: The rigging of the ship", "a.wire.o": "A wire across the forest (Original)", "a.wire.h": "A wire across the forest (HD)", "a.wire.c": "Compare original and HD: A wire across the forest", "a.cable.o": "The cable to the rocket (Original)", "a.cable.h": "The cable to the rocket (HD)", "a.cable.c": "Compare original and HD: The cable to the rocket", "t4": "The dock planks", "p4": "The planks of the dock stay crisp all the way into the distance.", "a.dock": "The dock seen from the ship", "a.dock.o": "The dock seen from the ship (Original)", "a.dock.h": "The dock seen from the ship (HD)", "a.dock.c": "Compare original and HD: The dock seen from the ship", "t5": "No more boxes", "p5": "In the official version, a raised switch or an open door shows a box around it. In Myst HD it blends into the view.", "tag5": "Myst Island · switch in front of the rocket", "a.raised": "A raised switch", "a.raised.o": "A raised switch (Original)", "a.raised.h": "A raised switch (HD)", "a.raised.c": "Compare original and HD: A raised switch", "t6": "Everything in its place", "p6": "In the official version, switches and other moving parts are drawn one pixel too low and break the lines behind them. In Myst HD they sit exactly where they belong.", "tag6d": "Myst Island · switch down", "tag6u": "Myst Island · switch up", "a.sw": "A switch near the rocket", "a.sw.o": "A switch near the rocket (Original)", "a.sw.h": "A switch near the rocket (HD)", "a.sw.c": "Compare original and HD: A switch near the rocket", "t7": "Movies that blend in", "p7": "In the official version, some movies show their rectangle inside the view, like the patch of sky that follows the gulls. In Myst HD they blend into the scene.", "a.gull": "A gull over the dock", "a.mill": "The windmill through the window", "a.gull.o": "A gull over the dock (Original)", "a.gull.h": "A gull over the dock (HD)", "a.gull.c": "Compare original and HD: A gull over the dock", "a.mill.o": "The windmill through the window (Original)", "a.mill.h": "The windmill through the window (HD)", "a.mill.c": "Compare original and HD: The windmill through the window", "t8": "Sixty frames per second", "p8": "Movies that showed 10 to 15 images per second now play smoothly at 60.", "l8o": "Original · 15 images per second", "l8h": "HD · 60 images per second", "v8": "Myst Island fly-by: original at 15 images per second next to HD at 60", "mH": "HD version", "mO": "Original version, sharp pixels", "mS": "Original version, smoothed", "t9": "Three ways to see Myst", "p9": "Press <kbd>H</kbd>, <kbd>O</kbd> or <kbd>S</kbd> at any time, even in the middle of a movie, which carries on from the same instant. <b>H</b> is the HD version. <b>O</b> is the original picture enlarged pixel for pixel. <b>S</b> is the original picture smoothed. The name of the mode appears for two seconds in the top right corner, in the language of the game: English, French, German, Polish or Spanish.", "tag9": "Myst Island · try the H, O and S keys on this page", "modes": "Display mode", "altH": "Myst Island, HD version", "altO": "Myst Island, Original version, sharp pixels", "altS": "Myst Island, Original version, smoothed", "t10": "Faithful to 1993", "r1": "The low-resolution textures of the 1993 renders are not repainted.", "r2": "The red and blue pages are left exactly as they are.", "r3": "Every change was checked against the original. Anything softer than the original was refused.", "r4": "Timing, sound and puzzles are unchanged, and the original application is not modified.", "r5": "The original pictures are always one key away.", "t11": "Release", "p11": "Myst HD is still a work in progress: nothing has been released yet. It should run on Mac and Windows.", "wip": "Work in progress", "plat": "Planned: Mac · Windows", "eyebrow": "Myst: Masterpiece Edition · 25th Anniversary · fan restoration", "h1": "Myst, in <span class=\"light\">high definition</span>", "lede": "Every picture and every movie of the game in four times the resolution, smoother movies, and a few fixes to the official version. The original 1993 images stay one key away.", "n1": "3,415", "d1": "pictures, 544×333 → 2176×1332", "d2": "movies in HD, same timing and sound", "d3": "movies at a steady 60 images per second", "d4": "display modes, switched at any time", "film": "Video tour of the restoration, 1 minute 53 seconds, with music, captions in English", "filmcap": "Video tour · 1 min 53 s · 1080p at 60 frames per second · captions in English", "credits": "Credits", "c1": "<a href=\"https://www.scummvm.org/\">ScummVM</a>, GNU GPL. The engine patch is available in source form.", "c2": "Upscaling model 4xNomos8kSC by Philip Hofmann, <a href=\"https://huggingface.co/Phips/4xNomos8kSC\">CC BY 4.0</a>.", "c3": "Frame interpolation: RIFE v4.6 through rife-ncnn-vulkan by nihui, MIT licence.", "c4": "Oswald and Noto Sans typefaces, SIL Open Font License.", "legal": "This is an unofficial fan project, not affiliated with or endorsed by Cyan Worlds, Inc. Myst is a registered trademark of Cyan Worlds, Inc. All pictures, movies and music of the game © Cyan Worlds, Inc. No game files are distributed with this page.", "langlabel": "Language"}, "fr": {"orig": "Original", "hd": "HD", "cmp": "Comparer l’original et la HD : ", "island": "Île de Myst", "channel": "Channelwood", "stone": "Stoneship", "mech": "Mechanical", "t1": "Quatre fois plus de résolution", "p1": "Chaque image du jeu est maintenant quatre fois plus nette : 2176×1332 pixels au lieu de 544×333. À gauche l’original, à droite Myst HD. Faites glisser le trait pour comparer.", "a.gear": "L’engrenage sur sa colline, vu du quai", "a.sirrus": "La chambre de Sirrus et le moulin derrière la fenêtre", "a.light": "Dans le phare", "a.ship": "Le bateau à quai", "ttl": "Écran titre", "a.ttl": "L’écran titre", "a.ttl.o": "L’écran titre (Original)", "a.ttl.h": "L’écran titre (HD)", "a.ttl.c": "Comparer l’original et la HD : L’écran titre", "a.gear.o": "L’engrenage sur sa colline, vu du quai (Original)", "a.gear.h": "L’engrenage sur sa colline, vu du quai (HD)", "a.gear.c": "Comparer l’original et la HD : L’engrenage sur sa colline, vu du quai", "a.sirrus.o": "La chambre de Sirrus et le moulin derrière la fenêtre (Original)", "a.sirrus.h": "La chambre de Sirrus et le moulin derrière la fenêtre (HD)", "a.sirrus.c": "Comparer l’original et la HD : La chambre de Sirrus et le moulin derrière la fenêtre", "a.light.o": "Dans le phare (Original)", "a.light.h": "Dans le phare (HD)", "a.light.c": "Comparer l’original et la HD : Dans le phare", "a.ship.o": "Le bateau à quai (Original)", "a.ship.h": "Le bateau à quai (HD)", "a.ship.c": "Comparer l’original et la HD : Le bateau à quai", "t2": "Les vidéos aussi", "p2": "Toutes les vidéos du jeu sont elles aussi en HD, avec le même minutage et le même son.", "v2": "Survol de Mechanical : original à côté de la HD", "t3": "Des contours nets", "p3": "Les câbles, cordages et rambardes n’ont plus d’escaliers : ils sont lisses et continus.", "a.rig": "Le gréement du bateau", "a.wire": "Un câble devant la forêt", "a.cable": "Le câble de la fusée", "a.rig.o": "Le gréement du bateau (Original)", "a.rig.h": "Le gréement du bateau (HD)", "a.rig.c": "Comparer l’original et la HD : Le gréement du bateau", "a.wire.o": "Un câble devant la forêt (Original)", "a.wire.h": "Un câble devant la forêt (HD)", "a.wire.c": "Comparer l’original et la HD : Un câble devant la forêt", "a.cable.o": "Le câble de la fusée (Original)", "a.cable.h": "Le câble de la fusée (HD)", "a.cable.c": "Comparer l’original et la HD : Le câble de la fusée", "t4": "Les planches du quai", "p4": "Les planches du quai restent nettes jusqu’au loin.", "a.dock": "Le quai vu du bateau", "a.dock.o": "Le quai vu du bateau (Original)", "a.dock.h": "Le quai vu du bateau (HD)", "a.dock.c": "Comparer l’original et la HD : Le quai vu du bateau", "t5": "Plus de cadres", "p5": "Dans la version officielle, un interrupteur levé ou une porte ouverte apparaît dans un cadre. Dans Myst HD, il se fond dans la vue.", "tag5": "Île de Myst · interrupteur devant la fusée", "a.raised": "Un interrupteur levé", "a.raised.o": "Un interrupteur levé (Original)", "a.raised.h": "Un interrupteur levé (HD)", "a.raised.c": "Comparer l’original et la HD : Un interrupteur levé", "t6": "Chaque chose à sa place", "p6": "Dans la version officielle, les interrupteurs et autres éléments mobiles sont dessinés un pixel trop bas et cassent les lignes derrière eux. Dans Myst HD, ils sont exactement à leur place.", "tag6d": "Île de Myst · interrupteur baissé", "tag6u": "Île de Myst · interrupteur levé", "a.sw": "Un interrupteur près de la fusée", "a.sw.o": "Un interrupteur près de la fusée (Original)", "a.sw.h": "Un interrupteur près de la fusée (HD)", "a.sw.c": "Comparer l’original et la HD : Un interrupteur près de la fusée", "t7": "Des vidéos bien intégrées", "p7": "Dans la version officielle, certaines vidéos laissent voir leur rectangle dans la vue, comme le morceau de ciel qui suit les mouettes. Dans Myst HD, elles se fondent dans le décor.", "a.gull": "Une mouette au-dessus du quai", "a.mill": "Le moulin à travers la fenêtre", "a.gull.o": "Une mouette au-dessus du quai (Original)", "a.gull.h": "Une mouette au-dessus du quai (HD)", "a.gull.c": "Comparer l’original et la HD : Une mouette au-dessus du quai", "a.mill.o": "Le moulin à travers la fenêtre (Original)", "a.mill.h": "Le moulin à travers la fenêtre (HD)", "a.mill.c": "Comparer l’original et la HD : Le moulin à travers la fenêtre", "t8": "Soixante images par seconde", "p8": "Les vidéos qui affichaient 10 à 15 images par seconde passent maintenant de façon fluide à 60.", "l8o": "Original · 15 images par seconde", "l8h": "HD · 60 images par seconde", "v8": "Survol de l’île de Myst : l’original à 15 images par seconde à côté de la HD à 60", "mH": "Version HD", "mO": "Version originale, pixels nets", "mS": "Version originale adoucie", "t9": "Trois façons de voir Myst", "p9": "Appuyez sur <kbd>H</kbd>, <kbd>O</kbd> ou <kbd>S</kbd> à tout moment, même au milieu d’une vidéo, qui reprend au même instant. <b>H</b> est la version HD. <b>O</b> est l’image originale agrandie pixel par pixel. <b>S</b> est l’image originale adoucie. Le nom du mode s’affiche deux secondes en haut à droite, dans la langue du jeu : anglais, français, allemand, polonais ou espagnol.", "tag9": "Île de Myst · essayez les touches H, O et S sur cette page", "modes": "Mode d’affichage", "altH": "Île de Myst, Version HD", "altO": "Île de Myst, Version originale, pixels nets", "altS": "Île de Myst, Version originale adoucie", "t10": "Fidèle à 1993", "r1": "Les textures basse résolution des images de 1993 ne sont pas repeintes.", "r2": "Les pages rouges et bleues restent exactement comme elles sont.", "r3": "Chaque modification a été comparée à l’original. Tout ce qui était plus flou que l’original a été refusé.", "r4": "Le minutage, le son et les énigmes sont inchangés, et l’application d’origine n’est pas modifiée.", "r5": "Les images originales sont toujours à une touche.", "t11": "Sortie", "p11": "Myst HD est encore en cours de développement : rien n’est encore sorti. Il devrait fonctionner sur Mac et sur Windows.", "wip": "En cours de développement", "plat": "Prévu : Mac · Windows", "eyebrow": "Myst: Masterpiece Edition · 25e anniversaire · restauration par un fan", "h1": "Myst, en <span class=\"light\">haute définition</span>", "lede": "Toutes les images et toutes les vidéos du jeu en résolution quatre fois supérieure, des vidéos plus fluides et quelques corrections de la version officielle. Les images originales de 1993 restent à une touche.", "n1": "3 415", "d1": "images, 544×333 → 2176×1332", "d2": "vidéos en HD, même minutage et même son", "d3": "vidéos à 60 images par seconde régulières", "d4": "modes d’affichage, à changer à tout moment", "film": "Visite en vidéo de la restauration, 1 minute 53 secondes, avec musique, textes en anglais", "filmcap": "Visite en vidéo · 1 min 53 s · 1080p à 60 images par seconde · textes en anglais", "credits": "Crédits", "c1": "<a href=\"https://www.scummvm.org/\">ScummVM</a>, GNU GPL. Le correctif du moteur est disponible sous forme de code source.", "c2": "Modèle d’agrandissement 4xNomos8kSC de Philip Hofmann, <a href=\"https://huggingface.co/Phips/4xNomos8kSC\">CC BY 4.0</a>.", "c3": "Interpolation d’images : RIFE v4.6 via rife-ncnn-vulkan de nihui, licence MIT.", "c4": "Polices Oswald et Noto Sans, SIL Open Font License.", "legal": "Ceci est un projet de fan non officiel, sans lien avec Cyan Worlds, Inc. ni approuvé par elle. Myst est une marque déposée de Cyan Worlds, Inc. Toutes les images, vidéos et musiques du jeu © Cyan Worlds, Inc. Aucun fichier du jeu n’est distribué avec cette page.", "langlabel": "Langue"}, "de": {"orig": "Original", "hd": "HD", "cmp": "Original und HD vergleichen: ", "island": "Insel Myst", "channel": "Channelwood", "stone": "Stoneship", "mech": "Mechanical", "t1": "Vierfache Auflösung", "p1": "Jedes Bild des Spiels ist jetzt viermal schärfer: 2176×1332 statt 544×333 Pixel. Links das Original, rechts Myst HD. Ziehen Sie die Linie, um zu vergleichen.", "a.gear": "Das Zahnrad auf seinem Hügel, vom Steg aus gesehen", "a.sirrus": "Sirrus’ Zimmer und die Windmühle hinter dem Fenster", "a.light": "Im Leuchtturm", "a.ship": "Das Schiff am Steg", "ttl": "Titelbildschirm", "a.ttl": "Der Titelbildschirm", "a.ttl.o": "Der Titelbildschirm (Original)", "a.ttl.h": "Der Titelbildschirm (HD)", "a.ttl.c": "Original und HD vergleichen: Der Titelbildschirm", "a.gear.o": "Das Zahnrad auf seinem Hügel, vom Steg aus gesehen (Original)", "a.gear.h": "Das Zahnrad auf seinem Hügel, vom Steg aus gesehen (HD)", "a.gear.c": "Original und HD vergleichen: Das Zahnrad auf seinem Hügel, vom Steg aus gesehen", "a.sirrus.o": "Sirrus’ Zimmer und die Windmühle hinter dem Fenster (Original)", "a.sirrus.h": "Sirrus’ Zimmer und die Windmühle hinter dem Fenster (HD)", "a.sirrus.c": "Original und HD vergleichen: Sirrus’ Zimmer und die Windmühle hinter dem Fenster", "a.light.o": "Im Leuchtturm (Original)", "a.light.h": "Im Leuchtturm (HD)", "a.light.c": "Original und HD vergleichen: Im Leuchtturm", "a.ship.o": "Das Schiff am Steg (Original)", "a.ship.h": "Das Schiff am Steg (HD)", "a.ship.c": "Original und HD vergleichen: Das Schiff am Steg", "t2": "Auch die Filme", "p2": "Auch alle Filme des Spiels sind in HD, mit gleichem Timing und gleichem Ton.", "v2": "Flug über Mechanical: Original neben HD", "t3": "Saubere Kanten", "p3": "Drähte, Seile und Geländer zeigen keine Treppenstufen mehr: Sie sind glatt und durchgehend.", "a.rig": "Die Takelage des Schiffs", "a.wire": "Ein Draht vor dem Wald", "a.cable": "Das Kabel zur Rakete", "a.rig.o": "Die Takelage des Schiffs (Original)", "a.rig.h": "Die Takelage des Schiffs (HD)", "a.rig.c": "Original und HD vergleichen: Die Takelage des Schiffs", "a.wire.o": "Ein Draht vor dem Wald (Original)", "a.wire.h": "Ein Draht vor dem Wald (HD)", "a.wire.c": "Original und HD vergleichen: Ein Draht vor dem Wald", "a.cable.o": "Das Kabel zur Rakete (Original)", "a.cable.h": "Das Kabel zur Rakete (HD)", "a.cable.c": "Original und HD vergleichen: Das Kabel zur Rakete", "t4": "Die Planken des Stegs", "p4": "Die Planken des Stegs bleiben bis in die Ferne scharf.", "a.dock": "Der Steg vom Schiff aus gesehen", "a.dock.o": "Der Steg vom Schiff aus gesehen (Original)", "a.dock.h": "Der Steg vom Schiff aus gesehen (HD)", "a.dock.c": "Original und HD vergleichen: Der Steg vom Schiff aus gesehen", "t5": "Keine Kästen mehr", "p5": "In der offiziellen Version erscheint um einen umgelegten Schalter oder eine offene Tür ein Kasten. In Myst HD fügt er sich nahtlos in die Ansicht ein.", "tag5": "Insel Myst · Schalter vor der Rakete", "a.raised": "Ein umgelegter Schalter", "a.raised.o": "Ein umgelegter Schalter (Original)", "a.raised.h": "Ein umgelegter Schalter (HD)", "a.raised.c": "Original und HD vergleichen: Ein umgelegter Schalter", "t6": "Alles an seinem Platz", "p6": "In der offiziellen Version werden Schalter und andere bewegliche Teile ein Pixel zu tief gezeichnet und unterbrechen die Linien dahinter. In Myst HD sitzen sie genau an ihrem Platz.", "tag6d": "Insel Myst · Schalter unten", "tag6u": "Insel Myst · Schalter oben", "a.sw": "Ein Schalter bei der Rakete", "a.sw.o": "Ein Schalter bei der Rakete (Original)", "a.sw.h": "Ein Schalter bei der Rakete (HD)", "a.sw.c": "Original und HD vergleichen: Ein Schalter bei der Rakete", "t7": "Filme, die sich einfügen", "p7": "In der offiziellen Version ist bei manchen Filmen ihr Rechteck in der Ansicht zu sehen, etwa das Stück Himmel, das den Möwen folgt. In Myst HD fügen sie sich in die Szene ein.", "a.gull": "Eine Möwe über dem Steg", "a.mill": "Die Windmühle durch das Fenster", "a.gull.o": "Eine Möwe über dem Steg (Original)", "a.gull.h": "Eine Möwe über dem Steg (HD)", "a.gull.c": "Original und HD vergleichen: Eine Möwe über dem Steg", "a.mill.o": "Die Windmühle durch das Fenster (Original)", "a.mill.h": "Die Windmühle durch das Fenster (HD)", "a.mill.c": "Original und HD vergleichen: Die Windmühle durch das Fenster", "t8": "Sechzig Bilder pro Sekunde", "p8": "Filme, die 10 bis 15 Bilder pro Sekunde zeigten, laufen jetzt flüssig mit 60.", "l8o": "Original · 15 Bilder pro Sekunde", "l8h": "HD · 60 Bilder pro Sekunde", "v8": "Flug über die Insel Myst: Original mit 15 Bildern pro Sekunde neben HD mit 60", "mH": "HD-Version", "mO": "Originalversion, scharfe Pixel", "mS": "Originalversion, geglättet", "t9": "Drei Arten, Myst zu sehen", "p9": "Drücken Sie jederzeit <kbd>H</kbd>, <kbd>O</kbd> oder <kbd>S</kbd>, auch mitten in einem Film, der an derselben Stelle weiterläuft. <b>H</b> ist die HD-Version. <b>O</b> ist das Originalbild, Pixel für Pixel vergrößert. <b>S</b> ist das geglättete Originalbild. Der Name des Modus erscheint zwei Sekunden lang oben rechts, in der Sprache des Spiels: Englisch, Französisch, Deutsch, Polnisch oder Spanisch.", "tag9": "Insel Myst · probieren Sie die Tasten H, O und S auf dieser Seite aus", "modes": "Anzeigemodus", "altH": "Insel Myst, HD-Version", "altO": "Insel Myst, Originalversion, scharfe Pixel", "altS": "Insel Myst, Originalversion, geglättet", "t10": "Treu zum Original von 1993", "r1": "Die niedrig aufgelösten Texturen der Bilder von 1993 werden nicht übermalt.", "r2": "Die roten und blauen Seiten bleiben genau so, wie sie sind.", "r3": "Jede Änderung wurde mit dem Original verglichen. Alles, was weicher als das Original war, wurde verworfen.", "r4": "Timing, Ton und Rätsel sind unverändert, und die Originalanwendung wird nicht verändert.", "r5": "Die Originalbilder sind immer nur einen Tastendruck entfernt.", "t11": "Veröffentlichung", "p11": "Myst HD ist noch in Arbeit: Bisher wurde nichts veröffentlicht. Es soll auf Mac und Windows laufen.", "wip": "In Arbeit", "plat": "Geplant: Mac · Windows", "eyebrow": "Myst: Masterpiece Edition · 25. Jubiläum · Fan-Restaurierung", "h1": "Myst in <span class=\"light\">High Definition</span>", "lede": "Alle Bilder und Filme des Spiels in vierfacher Auflösung, flüssigere Filme und einige Korrekturen gegenüber der offiziellen Version. Die Originalbilder von 1993 sind nur einen Tastendruck entfernt.", "n1": "3.415", "d1": "Bilder, 544×333 → 2176×1332", "d2": "Filme in HD, gleiches Timing und gleicher Ton", "d3": "Filme mit gleichmäßig 60 Bildern pro Sekunde", "d4": "Anzeigemodi, jederzeit umschaltbar", "film": "Videorundgang durch die Restaurierung, 1 Minute 53 Sekunden, mit Musik, Texte auf Englisch", "filmcap": "Videorundgang · 1 Min. 53 s · 1080p mit 60 Bildern pro Sekunde · Texte auf Englisch", "credits": "Credits", "c1": "<a href=\"https://www.scummvm.org/\">ScummVM</a>, GNU GPL. Der Engine-Patch ist als Quellcode verfügbar.", "c2": "Hochskalierungsmodell 4xNomos8kSC von Philip Hofmann, <a href=\"https://huggingface.co/Phips/4xNomos8kSC\">CC BY 4.0</a>.", "c3": "Bildinterpolation: RIFE v4.6 über rife-ncnn-vulkan von nihui, MIT-Lizenz.", "c4": "Schriften Oswald und Noto Sans, SIL Open Font License.", "legal": "Dies ist ein inoffizielles Fanprojekt, das weder mit Cyan Worlds, Inc. verbunden ist noch von ihr unterstützt wird. Myst ist eine eingetragene Marke von Cyan Worlds, Inc. Alle Bilder, Filme und Musikstücke des Spiels © Cyan Worlds, Inc. Mit dieser Seite werden keine Spieldateien verbreitet.", "langlabel": "Sprache"}, "pl": {"orig": "Oryginał", "hd": "HD", "cmp": "Porównaj oryginał i HD: ", "island": "Wyspa Myst", "channel": "Channelwood", "stone": "Stoneship", "mech": "Mechanical", "t1": "Czterokrotnie wyższa rozdzielczość", "p1": "Każdy obraz w grze jest teraz cztery razy ostrzejszy: 2176×1332 piksele zamiast 544×333. Po lewej oryginał, po prawej Myst HD. Przeciągnij linię, aby porównać.", "a.gear": "Koło zębate na wzgórzu, widziane z pomostu", "a.sirrus": "Pokój Sirrusa i wiatrak za oknem", "a.light": "Wnętrze latarni", "a.ship": "Statek przy pomoście", "ttl": "Ekran tytułowy", "a.ttl": "Ekran tytułowy", "a.ttl.o": "Ekran tytułowy (Oryginał)", "a.ttl.h": "Ekran tytułowy (HD)", "a.ttl.c": "Porównaj oryginał i HD: Ekran tytułowy", "a.gear.o": "Koło zębate na wzgórzu, widziane z pomostu (Oryginał)", "a.gear.h": "Koło zębate na wzgórzu, widziane z pomostu (HD)", "a.gear.c": "Porównaj oryginał i HD: Koło zębate na wzgórzu, widziane z pomostu", "a.sirrus.o": "Pokój Sirrusa i wiatrak za oknem (Oryginał)", "a.sirrus.h": "Pokój Sirrusa i wiatrak za oknem (HD)", "a.sirrus.c": "Porównaj oryginał i HD: Pokój Sirrusa i wiatrak za oknem", "a.light.o": "Wnętrze latarni (Oryginał)", "a.light.h": "Wnętrze latarni (HD)", "a.light.c": "Porównaj oryginał i HD: Wnętrze latarni", "a.ship.o": "Statek przy pomoście (Oryginał)", "a.ship.h": "Statek przy pomoście (HD)", "a.ship.c": "Porównaj oryginał i HD: Statek przy pomoście", "t2": "Filmy również", "p2": "Wszystkie filmy z gry również są w HD, z tym samym czasem i dźwiękiem.", "v2": "Przelot nad Mechanical: oryginał obok HD", "t3": "Czyste krawędzie", "p3": "Przewody, liny i poręcze nie mają już schodków: są gładkie i ciągłe.", "a.rig": "Olinowanie statku", "a.wire": "Przewód na tle lasu", "a.cable": "Kabel prowadzący do rakiety", "a.rig.o": "Olinowanie statku (Oryginał)", "a.rig.h": "Olinowanie statku (HD)", "a.rig.c": "Porównaj oryginał i HD: Olinowanie statku", "a.wire.o": "Przewód na tle lasu (Oryginał)", "a.wire.h": "Przewód na tle lasu (HD)", "a.wire.c": "Porównaj oryginał i HD: Przewód na tle lasu", "a.cable.o": "Kabel prowadzący do rakiety (Oryginał)", "a.cable.h": "Kabel prowadzący do rakiety (HD)", "a.cable.c": "Porównaj oryginał i HD: Kabel prowadzący do rakiety", "t4": "Deski pomostu", "p4": "Deski pomostu pozostają ostre aż po horyzont.", "a.dock": "Pomost widziany ze statku", "a.dock.o": "Pomost widziany ze statku (Oryginał)", "a.dock.h": "Pomost widziany ze statku (HD)", "a.dock.c": "Porównaj oryginał i HD: Pomost widziany ze statku", "t5": "Koniec z ramkami", "p5": "W oficjalnej wersji podniesiony przełącznik lub otwarte drzwi mają wokół siebie ramkę. W Myst HD wtapiają się w widok.", "tag5": "Wyspa Myst · przełącznik przed rakietą", "a.raised": "Podniesiony przełącznik", "a.raised.o": "Podniesiony przełącznik (Oryginał)", "a.raised.h": "Podniesiony przełącznik (HD)", "a.raised.c": "Porównaj oryginał i HD: Podniesiony przełącznik", "t6": "Wszystko na swoim miejscu", "p6": "W oficjalnej wersji przełączniki i inne ruchome elementy są rysowane o jeden piksel za nisko i przerywają linie za nimi. W Myst HD są dokładnie tam, gdzie powinny.", "tag6d": "Wyspa Myst · przełącznik opuszczony", "tag6u": "Wyspa Myst · przełącznik podniesiony", "a.sw": "Przełącznik przy rakiecie", "a.sw.o": "Przełącznik przy rakiecie (Oryginał)", "a.sw.h": "Przełącznik przy rakiecie (HD)", "a.sw.c": "Porównaj oryginał i HD: Przełącznik przy rakiecie", "t7": "Filmy wtopione w obraz", "p7": "W oficjalnej wersji niektóre filmy odcinają się prostokątem od widoku, jak kawałek nieba podążający za mewami. W Myst HD wtapiają się w scenę.", "a.gull": "Mewa nad pomostem", "a.mill": "Wiatrak za oknem", "a.gull.o": "Mewa nad pomostem (Oryginał)", "a.gull.h": "Mewa nad pomostem (HD)", "a.gull.c": "Porównaj oryginał i HD: Mewa nad pomostem", "a.mill.o": "Wiatrak za oknem (Oryginał)", "a.mill.h": "Wiatrak za oknem (HD)", "a.mill.c": "Porównaj oryginał i HD: Wiatrak za oknem", "t8": "Sześćdziesiąt klatek na sekundę", "p8": "Filmy, które miały od 10 do 15 klatek na sekundę, odtwarzają się teraz płynnie w 60.", "l8o": "Oryginał · 15 klatek na sekundę", "l8h": "HD · 60 klatek na sekundę", "v8": "Przelot nad Wyspą Myst: oryginał w 15 klatkach na sekundę obok HD w 60", "mH": "Wersja HD", "mO": "Wersja oryginalna, ostre piksele", "mS": "Wersja oryginalna, wygładzona", "t9": "Trzy sposoby oglądania Myst", "p9": "Naciśnij <kbd>H</kbd>, <kbd>O</kbd> lub <kbd>S</kbd> w dowolnej chwili, nawet w trakcie filmu, który toczy się dalej od tego samego momentu. <b>H</b> to wersja HD. <b>O</b> to oryginalny obraz powiększony piksel po pikselu. <b>S</b> to wygładzony oryginalny obraz. Nazwa trybu pojawia się na dwie sekundy w prawym górnym rogu, w języku gry: angielskim, francuskim, niemieckim, polskim lub hiszpańskim.", "tag9": "Wyspa Myst · wypróbuj klawisze H, O i S na tej stronie", "modes": "Tryb obrazu", "altH": "Wyspa Myst, Wersja HD", "altO": "Wyspa Myst, Wersja oryginalna, ostre piksele", "altS": "Wyspa Myst, Wersja oryginalna, wygładzona", "t10": "Wierny wersji z 1993 roku", "r1": "Tekstury niskiej rozdzielczości z obrazów z 1993 roku nie są przemalowywane.", "r2": "Czerwone i niebieskie strony pozostają dokładnie takie, jakie są.", "r3": "Każdą zmianę porównano z oryginałem. Wszystko, co było mniej ostre niż oryginał, odrzucono.", "r4": "Czas, dźwięk i zagadki pozostają bez zmian, a oryginalna aplikacja nie jest modyfikowana.", "r5": "Oryginalne obrazy są zawsze o jeden klawisz stąd.", "t11": "Wydanie", "p11": "Myst HD jest wciąż w przygotowaniu: nic jeszcze nie zostało wydane. Powinien działać na komputerach Mac i Windows.", "wip": "W przygotowaniu", "plat": "Planowane: Mac · Windows", "eyebrow": "Myst: Masterpiece Edition · 25. rocznica · renowacja fanowska", "h1": "Myst w <span class=\"light\">wysokiej rozdzielczości</span>", "lede": "Wszystkie obrazy i filmy z gry w czterokrotnie wyższej rozdzielczości, płynniejsze filmy i kilka poprawek względem oficjalnej wersji. Oryginalne obrazy z 1993 roku są zawsze o jeden klawisz stąd.", "n1": "3415", "d1": "obrazów, 544×333 → 2176×1332", "d2": "filmów w HD, ten sam czas i dźwięk", "d3": "filmów w stałych 60 klatkach na sekundę", "d4": "tryby obrazu, przełączane w dowolnej chwili", "film": "Film o renowacji, 1 minuta 53 sekundy, z muzyką, napisy po angielsku", "filmcap": "Film · 1 min 53 s · 1080p, 60 klatek na sekundę · napisy po angielsku", "credits": "Autorzy i licencje", "c1": "<a href=\"https://www.scummvm.org/\">ScummVM</a>, GNU GPL. Poprawka silnika jest dostępna w postaci kodu źródłowego.", "c2": "Model powiększania 4xNomos8kSC autorstwa Philipa Hofmanna, <a href=\"https://huggingface.co/Phips/4xNomos8kSC\">CC BY 4.0</a>.", "c3": "Interpolacja klatek: RIFE v4.6 przez rife-ncnn-vulkan autorstwa nihui, licencja MIT.", "c4": "Kroje pisma Oswald i Noto Sans, SIL Open Font License.", "legal": "To nieoficjalny projekt fanowski, niezwiązany z Cyan Worlds, Inc. ani przez nią niepopierany. Myst jest zastrzeżonym znakiem towarowym Cyan Worlds, Inc. Wszystkie obrazy, filmy i muzyka z gry © Cyan Worlds, Inc. Ta strona nie rozpowszechnia żadnych plików gry.", "langlabel": "Język"}, "es": {"orig": "Original", "hd": "HD", "cmp": "Comparar original y HD: ", "island": "Isla de Myst", "channel": "Channelwood", "stone": "Stoneship", "mech": "Mechanical", "t1": "Cuatro veces más resolución", "p1": "Cada imagen del juego es ahora cuatro veces más nítida: 2176×1332 píxeles en lugar de 544×333. A la izquierda, el original; a la derecha, Myst HD. Arrastra la línea para comparar.", "a.gear": "El engranaje en su colina, visto desde el muelle", "a.sirrus": "La habitación de Sirrus y el molino tras la ventana", "a.light": "Dentro del faro", "a.ship": "El barco en el muelle", "ttl": "Pantalla de título", "a.ttl": "La pantalla de título", "a.ttl.o": "La pantalla de título (Original)", "a.ttl.h": "La pantalla de título (HD)", "a.ttl.c": "Comparar original y HD: La pantalla de título", "a.gear.o": "El engranaje en su colina, visto desde el muelle (Original)", "a.gear.h": "El engranaje en su colina, visto desde el muelle (HD)", "a.gear.c": "Comparar original y HD: El engranaje en su colina, visto desde el muelle", "a.sirrus.o": "La habitación de Sirrus y el molino tras la ventana (Original)", "a.sirrus.h": "La habitación de Sirrus y el molino tras la ventana (HD)", "a.sirrus.c": "Comparar original y HD: La habitación de Sirrus y el molino tras la ventana", "a.light.o": "Dentro del faro (Original)", "a.light.h": "Dentro del faro (HD)", "a.light.c": "Comparar original y HD: Dentro del faro", "a.ship.o": "El barco en el muelle (Original)", "a.ship.h": "El barco en el muelle (HD)", "a.ship.c": "Comparar original y HD: El barco en el muelle", "t2": "Los vídeos también", "p2": "Todos los vídeos del juego están también en HD, con el mismo ritmo y el mismo sonido.", "v2": "Vuelo sobre Mechanical: original junto a HD", "t3": "Bordes limpios", "p3": "Cables, cuerdas y barandillas ya no muestran escalones: son suaves y continuos.", "a.rig": "El aparejo del barco", "a.wire": "Un cable ante el bosque", "a.cable": "El cable hacia el cohete", "a.rig.o": "El aparejo del barco (Original)", "a.rig.h": "El aparejo del barco (HD)", "a.rig.c": "Comparar original y HD: El aparejo del barco", "a.wire.o": "Un cable ante el bosque (Original)", "a.wire.h": "Un cable ante el bosque (HD)", "a.wire.c": "Comparar original y HD: Un cable ante el bosque", "a.cable.o": "El cable hacia el cohete (Original)", "a.cable.h": "El cable hacia el cohete (HD)", "a.cable.c": "Comparar original y HD: El cable hacia el cohete", "t4": "Las tablas del muelle", "p4": "Las tablas del muelle se mantienen nítidas hasta la distancia.", "a.dock": "El muelle visto desde el barco", "a.dock.o": "El muelle visto desde el barco (Original)", "a.dock.h": "El muelle visto desde el barco (HD)", "a.dock.c": "Comparar original y HD: El muelle visto desde el barco", "t5": "Adiós a los recuadros", "p5": "En la versión oficial, un interruptor levantado o una puerta abierta muestran un recuadro alrededor. En Myst HD se funden con la vista.", "tag5": "Isla de Myst · interruptor delante del cohete", "a.raised": "Un interruptor levantado", "a.raised.o": "Un interruptor levantado (Original)", "a.raised.h": "Un interruptor levantado (HD)", "a.raised.c": "Comparar original y HD: Un interruptor levantado", "t6": "Cada cosa en su sitio", "p6": "En la versión oficial, los interruptores y otras piezas móviles se dibujan un píxel demasiado abajo y rompen las líneas que hay detrás. En Myst HD están exactamente en su sitio.", "tag6d": "Isla de Myst · interruptor bajado", "tag6u": "Isla de Myst · interruptor levantado", "a.sw": "Un interruptor junto al cohete", "a.sw.o": "Un interruptor junto al cohete (Original)", "a.sw.h": "Un interruptor junto al cohete (HD)", "a.sw.c": "Comparar original y HD: Un interruptor junto al cohete", "t7": "Vídeos integrados", "p7": "En la versión oficial, algunos vídeos dejan ver su rectángulo dentro de la vista, como el trozo de cielo que sigue a las gaviotas. En Myst HD se funden con la escena.", "a.gull": "Una gaviota sobre el muelle", "a.mill": "El molino a través de la ventana", "a.gull.o": "Una gaviota sobre el muelle (Original)", "a.gull.h": "Una gaviota sobre el muelle (HD)", "a.gull.c": "Comparar original y HD: Una gaviota sobre el muelle", "a.mill.o": "El molino a través de la ventana (Original)", "a.mill.h": "El molino a través de la ventana (HD)", "a.mill.c": "Comparar original y HD: El molino a través de la ventana", "t8": "Sesenta imágenes por segundo", "p8": "Los vídeos que mostraban de 10 a 15 imágenes por segundo se reproducen ahora con fluidez a 60.", "l8o": "Original · 15 imágenes por segundo", "l8h": "HD · 60 imágenes por segundo", "v8": "Vuelo sobre la isla de Myst: original a 15 imágenes por segundo junto a HD a 60", "mH": "Versión HD", "mO": "Versión original, píxeles nítidos", "mS": "Versión original suavizada", "t9": "Tres maneras de ver Myst", "p9": "Pulsa <kbd>H</kbd>, <kbd>O</kbd> o <kbd>S</kbd> en cualquier momento, incluso en mitad de un vídeo, que continúa desde el mismo instante. <b>H</b> es la versión HD. <b>O</b> es la imagen original ampliada píxel a píxel. <b>S</b> es la imagen original suavizada. El nombre del modo aparece dos segundos arriba a la derecha, en el idioma del juego: inglés, francés, alemán, polaco o español.", "tag9": "Isla de Myst · prueba las teclas H, O y S en esta página", "modes": "Modo de imagen", "altH": "Isla de Myst, Versión HD", "altO": "Isla de Myst, Versión original, píxeles nítidos", "altS": "Isla de Myst, Versión original suavizada", "t10": "Fiel a 1993", "r1": "Las texturas de baja resolución de las imágenes de 1993 no se repintan.", "r2": "Las páginas rojas y azules se dejan exactamente como están.", "r3": "Cada cambio se comparó con el original. Todo lo que quedaba más borroso que el original se descartó.", "r4": "El ritmo, el sonido y los puzles no cambian, y la aplicación original no se modifica.", "r5": "Las imágenes originales están siempre a una tecla de distancia.", "t11": "Lanzamiento", "p11": "Myst HD sigue en desarrollo: todavía no se ha publicado nada. Debería funcionar en Mac y Windows.", "wip": "En desarrollo", "plat": "Previsto: Mac · Windows", "eyebrow": "Myst: Masterpiece Edition · 25.º aniversario · restauración hecha por un fan", "h1": "Myst, en <span class=\"light\">alta definición</span>", "lede": "Todas las imágenes y todos los vídeos del juego con cuatro veces más resolución, vídeos más fluidos y algunas correcciones respecto a la versión oficial. Las imágenes originales de 1993 siguen a una tecla de distancia.", "n1": "3415", "d1": "imágenes, 544×333 → 2176×1332", "d2": "vídeos en HD, mismo ritmo y mismo sonido", "d3": "vídeos a 60 imágenes por segundo constantes", "d4": "modos de imagen, intercambiables en cualquier momento", "film": "Recorrido en vídeo por la restauración, 1 minuto 53 segundos, con música, textos en inglés", "filmcap": "Recorrido en vídeo · 1 min 53 s · 1080p a 60 imágenes por segundo · textos en inglés", "credits": "Créditos", "c1": "<a href=\"https://www.scummvm.org/\">ScummVM</a>, GNU GPL. El parche del motor está disponible como código fuente.", "c2": "Modelo de ampliación 4xNomos8kSC de Philip Hofmann, <a href=\"https://huggingface.co/Phips/4xNomos8kSC\">CC BY 4.0</a>.", "c3": "Interpolación de imágenes: RIFE v4.6 mediante rife-ncnn-vulkan de nihui, licencia MIT.", "c4": "Tipografías Oswald y Noto Sans, SIL Open Font License.", "legal": "Este es un proyecto no oficial de un fan, sin relación con Cyan Worlds, Inc. ni respaldado por ella. Myst es una marca registrada de Cyan Worlds, Inc. Todas las imágenes, vídeos y música del juego © Cyan Worlds, Inc. Esta página no distribuye ningún archivo del juego.", "langlabel": "Idioma"}};
+  var LANGS = ["en", "fr", "de", "pl", "es"];
+  var current = "en";
+
+  function pick() {
+    try { var s = localStorage.getItem("mysthd-lang"); if (LANGS.indexOf(s) >= 0) return s; } catch (e) {}
+    var list = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language || "en"];
+    for (var i = 0; i < list.length; i++) {
+      var p = String(list[i]).toLowerCase().slice(0, 2);
+      if (LANGS.indexOf(p) >= 0) return p;
+    }
+    return "en";
+  }
+
+  function apply(lang) {
+    var d = I18N[lang] || I18N.en;
+    current = lang;
+    document.documentElement.lang = lang;
+    document.querySelectorAll("[data-i18n]").forEach(function (el) { var v = d[el.dataset.i18n]; if (v != null) el.innerHTML = v; });
+    document.querySelectorAll("[data-i18n-alt]").forEach(function (el) { var v = d[el.dataset.i18nAlt]; if (v != null) el.alt = v; });
+    document.querySelectorAll("[data-i18n-aria]").forEach(function (el) { var v = d[el.dataset.i18nAria]; if (v != null) el.setAttribute("aria-label", v); });
+    var sel = document.getElementById("lang-select");
+    if (sel) sel.value = lang;
+    var osd = document.querySelector(".mode-osd"), on = document.querySelector('.mode-buttons button[aria-pressed="true"]');
+    if (osd && on) osd.textContent = d["m" + on.dataset.mode];
+  }
+
+  var sel = document.getElementById("lang-select");
+  if (sel) sel.addEventListener("change", function () {
+    try { localStorage.setItem("mysthd-lang", sel.value); } catch (e) {}
+    apply(sel.value);
+  });
+  apply(pick());
+
+  // before / after sliders
+  document.querySelectorAll(".ba").forEach(function (fig) {
+    var r = fig.querySelector(".ba-range");
+    var set = function () { fig.style.setProperty("--pos", r.value + "%"); };
+    r.addEventListener("input", set);
+    set();
+  });
+
+  // display modes, also with the H, O and S keys as in the game
+  var box = document.querySelector(".modes");
+  if (!box) return;
+  var osd = box.querySelector(".mode-osd");
+  var timer = null;
+  function show(m) {
+    box.querySelectorAll("img[data-mode]").forEach(function (i) { i.hidden = i.dataset.mode !== m; });
+    box.querySelectorAll("button[data-mode]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.mode === m)); });
+    osd.textContent = (I18N[current] || I18N.en)["m" + m];
+    osd.classList.remove("off");
+    clearTimeout(timer);
+    timer = setTimeout(function () { osd.classList.add("off"); }, 2000);
+  }
+  box.querySelectorAll("button[data-mode]").forEach(function (b) {
+    b.addEventListener("click", function () { show(b.dataset.mode); });
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var tg = e.target && e.target.tagName;
+    if ((tg === "INPUT" && e.target.type !== "range") || tg === "TEXTAREA" || tg === "SELECT") return;
+    var k = (e.key || "").toUpperCase();
+    if (k === "H" || k === "O" || k === "S") show(k);
+  });
+})();
+</script>
+</body>
+</html>
